@@ -19,6 +19,18 @@ The API will be available at `http://localhost:8080`. To verify:
 curl http://localhost:8080/api/hello
 ```
 
+### Tests
+
+```bash
+./gradlew test
+```
+
+Or with Docker:
+
+```bash
+docker run --rm -v $(pwd):/app -w /app eclipse-temurin:21-jdk ./gradlew test
+```
+
 ### Docker
 
 ```bash
