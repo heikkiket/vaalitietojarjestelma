@@ -4,6 +4,9 @@
 Tavoitteena on synnyttää 2030-luvun digitaalinen kyber äänikatalooki.
 Tämä se on. Halvalla tehty ja helkkarin hyvä.
 
+## TODO
+Vaalipiirit
+
 ## Speksit
 The electoral information system has to be a modular one. The UI has to have a clear separation from backend via REST API.
 

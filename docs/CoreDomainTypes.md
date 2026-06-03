@@ -35,6 +35,84 @@ A geographic or administrative voting district within an election.
 | name | string | e.g. "Helsinki constituency" |
 | code | string | Official code |
 | seatsAvailable | int | Number of seats to be filled |
+| pollingDistricts | PollingDistrict[] | Polling districts within this constituency |
+
+---
+
+## PollingDistrict
+
+A subdivision of a constituency with its own polling station and board.
+
+| Field | Type | Notes |
+|---|---|---|
+| id | UUID | |
+| constituencyId | UUID | Parent constituency |
+| name | string | e.g. "Kallio polling district" |
+| code | string | Official code |
+| pollingStationAddress | string | Physical address of the polling station |
+
+---
+
+## PollingDistrictBoard
+
+The board (vaalilautakunta) responsible for overseeing a polling station and counting paper ballots.
+
+| Field | Type | Notes |
+|---|---|---|
+| id | UUID | |
+| electionId | UUID | |
+| pollingDistrictId | UUID | The polling district this board serves |
+| members | PollWorker[] | All assigned board members |
+| status | BoardStatus | See enum below |
+
+**BoardStatus:** `ASSIGNED | ACTIVE | TALLY_SUBMITTED | COMPLETED`
+
+---
+
+## PollWorker
+
+An individual poll worker (vaalivirkailija) assigned to a polling district board.
+
+| Field | Type | Notes |
+|---|---|---|
+| id | UUID | |
+| boardId | UUID | The PollingDistrictBoard this worker belongs to |
+| firstName | string | |
+| lastName | string | |
+| role | PollWorkerRole | See enum below |
+
+**PollWorkerRole:** `CHAIRPERSON | SECRETARY | MEMBER | SUBSTITUTE`
+
+---
+
+## CentralElectoralCommission
+
+The central oversight body (keskusvaalilautakunta) responsible for supervising the election process and certifying final results.
+
+| Field | Type | Notes |
+|---|---|---|
+| id | UUID | |
+| electionId | UUID | |
+| name | string | Official name of the commission |
+| jurisdiction | string | e.g. "National" or the municipality name |
+| members | CommissionMember[] | |
+
+---
+
+## CommissionMember
+
+A member of the Central Electoral Commission.
+
+| Field | Type | Notes |
+|---|---|---|
+| id | UUID | |
+| commissionId | UUID | |
+| firstName | string | |
+| lastName | string | |
+| role | CommissionMemberRole | See enum below |
+| appointedAt | date | |
+
+**CommissionMemberRole:** `CHAIRPERSON | DEPUTY_CHAIRPERSON | MEMBER | SUBSTITUTE`
 
 ---
 
@@ -54,7 +132,7 @@ A registered political party that can sponsor candidate lists.
 
 ## CandidateList
 
-An electoral list submitted by a party (or independent group) for a specific constituency. In Finnish elections this is the *ehdokaslista*.
+An electoral list submitted by a party (or independent group) for a specific constituency (ehdokaslista in Finnish elections).
 
 | Field | Type | Notes |
 |---|---|---|
@@ -88,38 +166,42 @@ An individual standing for election on a candidate list.
 
 ---
 
-## Voter
+## BoardTally
 
-A person eligible to vote. Voter identity is kept strictly separate from Vote records to preserve ballot secrecy.
-
-| Field | Type | Notes |
-|---|---|---|
-| id | UUID | Internal identifier only |
-| nationalId | string | Encrypted; used only for authentication and eligibility |
-| constituencyId | UUID | Assigned based on residence |
-| hasVoted | boolean | Set true when vote is cast; no link to actual vote |
-
-**Privacy constraint:** No join between Voter and Vote must ever be persisted or queryable.
-
----
-
-## Vote
-
-An anonymous record of a single vote cast. Contains no voter-identifying information.
+The ballot count submitted by a polling district board after physically counting paper ballots. Serves as the authoritative input for constituency-level results.
 
 | Field | Type | Notes |
 |---|---|---|
 | id | UUID | |
 | electionId | UUID | |
-| constituencyId | UUID | |
-| candidateId | UUID | The chosen candidate |
-| castedAt | datetime | Timestamp |
+| pollingDistrictId | UUID | |
+| boardId | UUID | The PollingDistrictBoard that submitted this tally |
+| status | BoardTallyStatus | See enum below |
+| submittedAt | datetime | When the board submitted the tally |
+| approvedAt | datetime | nullable; when an official approved the tally |
+| totalBallotsCounted | int | Total number of physical ballots counted |
+| invalidBallots | int | Number of blank or invalid ballots |
+| candidateTallies | CandidateTallyEntry[] | Per-candidate ballot counts |
+
+**BoardTallyStatus:** `DRAFT | SUBMITTED | APPROVED | REJECTED`
+
+---
+
+## CandidateTallyEntry
+
+The count of physical ballots for a specific candidate within a board tally.
+
+| Field | Type | Notes |
+|---|---|---|
+| tallyId | UUID | Parent BoardTally |
+| candidateId | UUID | |
+| ballotCount | int | Number of physical ballots counted for this candidate |
 
 ---
 
 ## Result
 
-Aggregated results for an election, scoped to a constituency. Computed after voting closes.
+Aggregated results for an election, scoped to a constituency. Computed from approved BoardTallies after voting closes.
 
 | Field | Type | Notes |
 |---|---|---|
@@ -138,13 +220,13 @@ Aggregated results for an election, scoped to a constituency. Computed after vot
 
 ## CandidateResult
 
-Vote tally for a single candidate within a constituency result.
+Vote tally for a single candidate within a constituency result, aggregated from approved board tallies.
 
 | Field | Type | Notes |
 |---|---|---|
 | resultId | UUID | Parent Result |
 | candidateId | UUID | |
-| voteCount | int | Raw votes received |
+| voteCount | int | Total ballots received across all polling districts |
 | voteShare | decimal | Percentage of valid votes |
 | comparativeNumber | decimal | D'Hondt or other allocation figure |
 | elected | boolean | Whether this candidate won a seat |
@@ -182,25 +264,30 @@ Records which candidate fills which seat after the allocation algorithm runs.
 
 ```
 Election
+ ├── CentralElectoralCommission
+ │    └── CommissionMember[]
  ├── Constituency[]
+ │    ├── PollingDistrict[]
+ │    │    └── PollingDistrictBoard  (vaalilautakunta)
+ │    │         ├── PollWorker[]     (vaalivirkailijat)
+ │    │         └── BoardTally
+ │    │              └── CandidateTallyEntry[]
  │    ├── CandidateList[]  (per party)
  │    │    └── Candidate[]
- │    ├── Vote[]           (anonymous, no voter link)
- │    └── Result
+ │    └── Result  ←── aggregated from approved BoardTallies
  │         ├── CandidateResult[]
  │         ├── CandidateListResult[]
  │         └── SeatAllocation[]
  └── (Party — referenced by CandidateList)
-
-Voter  ──→  authenticates  ──→  marks hasVoted = true
-            (no persistent link to Vote)
 ```
 
 ---
 
 ## Design Notes
 
-- **Ballot secrecy**: `Voter` and `Vote` are intentionally unlinked after the vote is recorded. The system must never expose a mapping between a voter's identity and their ballot.
-- **Modularity**: Each aggregate (Election, CandidateList, Result) is independently addressable via the REST API and can evolve separately.
+- **Paper ballots only**: Voting is conducted exclusively on physical paper ballots. No electronic voting is supported. BoardTallies are the sole authoritative source for vote counts.
+- **Counting chain**: Each PollingDistrictBoard counts its own ballots and submits a BoardTally. Constituency Results are aggregated from approved BoardTallies only.
+- **Modularity**: Each aggregate (Election, CandidateList, BoardTally, Result) is independently addressable via the REST API and can evolve separately.
 - **Seat allocation algorithm**: Encapsulated behind the Result computation step; the algorithm (D'Hondt, Sainte-Laguë, etc.) is election-type specific and should be pluggable.
-- **Status machines**: Election, CandidateList, and Result each have explicit status enums to control which operations are permitted at each lifecycle stage.
+- **Status machines**: Election, CandidateList, BoardTally, and Result each have explicit status enums to control which operations are permitted at each lifecycle stage.
+- **Central Electoral Commission**: Supervises the counting process and certifies final results; commission members are recorded to support audit trails.

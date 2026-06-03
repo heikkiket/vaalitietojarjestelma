@@ -5,9 +5,10 @@
 | Actor | Description |
 |---|---|
 | **Election Official** | Configures and administers elections, manages candidates and lists |
-| **Voter** | Casts a vote in an election |
 | **Candidate** | Stands for election; may view own results |
 | **Party Administrator** | Manages party information and candidate lists |
+| **Poll Worker** | Member of a polling district board; participates in counting paper ballots and submitting tallies |
+| **Central Electoral Commission** | Oversees the election process, reviews ballot tallies, and certifies final results |
 | **Observer** | Read-only access to published results and statistics |
 | **System Administrator** | Manages system configuration, users, and access rights |
 
@@ -71,26 +72,22 @@
 
 ---
 
-## UC-05: Cast a Vote
+## UC-05: Manage Polling Districts and Boards
 
-**Actor:** Voter  
-**Goal:** Vote for a candidate or party list in an election.
+**Actor:** Election Official  
+**Goal:** Set up polling districts and assign polling district boards for an election.
 
 **Main Flow:**
-1. Voter authenticates (strong identification).
-2. System presents the ballot for the voter's constituency.
-3. Voter selects a candidate (or list, depending on election type).
-4. System confirms the vote and records it anonymously.
-5. Voter receives confirmation; vote is irreversible.
-
-**Preconditions:** Voter is eligible and has not yet voted in this election.  
-**Postconditions:** Vote is recorded; voter is marked as having voted.
+1. Official defines polling districts within each constituency, including polling station addresses.
+2. Official creates a polling district board for each district.
+3. Official assigns poll workers to each board and designates roles (chairperson, secretary, members, substitutes).
+4. The system registers the assignments and notifies poll workers.
 
 ---
 
 ## UC-06: View Candidate Information
 
-**Actor:** Observer, Voter  
+**Actor:** Observer, Candidate, Election Official, Party Administrator  
 **Goal:** Browse candidates and their details before or during an election.
 
 **Main Flow:**
@@ -100,27 +97,30 @@
 
 ---
 
-## UC-07: Close Voting and Tally Results
+## UC-07: Close Voting and Initiate Counting
 
 **Actor:** Election Official  
-**Goal:** Close an election and compute preliminary results.
+**Goal:** Close the polling period and initiate the paper ballot counting process.
 
 **Main Flow:**
 1. Election Official closes the voting period.
-2. System aggregates votes per candidate and per list.
-3. System applies seat allocation algorithm (e.g., D'Hondt).
-4. Preliminary results are computed and stored.
-5. Results are published to observers.
+2. System transitions election status to COUNTING.
+3. Polling district boards are notified to begin counting their paper ballots.
+4. Boards submit their tallies (see UC-12).
+5. Once all tallies are approved, the system aggregates votes per candidate and per list.
+6. System applies the seat allocation algorithm (e.g., D'Hondt).
+7. Preliminary results are computed and stored.
+8. Results are published to observers.
 
 ---
 
 ## UC-08: Publish Official Results
 
-**Actor:** Election Official  
+**Actor:** Election Official / Central Electoral Commission  
 **Goal:** Publish final, certified election results.
 
 **Main Flow:**
-1. Official reviews and approves tallied results.
+1. Central Electoral Commission reviews and approves the tallied results.
 2. System marks results as official.
 3. Seat assignments per constituency are finalised.
 4. Results are made publicly accessible via API and UI.
@@ -129,7 +129,7 @@
 
 ## UC-09: View Election Results
 
-**Actor:** Observer, Candidate, Voter  
+**Actor:** Observer, Candidate, Election Official  
 **Goal:** View results at various levels of aggregation.
 
 **Main Flow:**
@@ -152,7 +152,7 @@
 
 **Main Flow:**
 1. User selects an election and desired scope.
-2. System generates export (JSON, CSV) with votes, results, and metadata.
+2. System generates export (JSON, CSV) with vote counts, results, and metadata.
 3. User downloads the file.
 
 ---
@@ -160,41 +160,60 @@
 ## UC-11: Manage Users and Roles
 
 **Actor:** System Administrator  
-**Goal:** Create accounts and assign roles to election officials and party administrators.
+**Goal:** Create accounts and assign roles to election officials, commission members, party administrators, and poll workers.
 
 **Main Flow:**
 1. Administrator creates a user account.
-2. Administrator assigns one or more roles (Election Official, Party Administrator, Observer).
+2. Administrator assigns one or more roles (Election Official, Central Electoral Commission, Party Administrator, Poll Worker, Observer).
 3. User can log in and perform actions permitted by their role.
 
 ---
 
-## UC-12: Validate Voter Eligibility
+## UC-12: Submit Ballot Tally
 
-**Actor:** System (automated)  
-**Goal:** Confirm a voter is eligible to vote in a given election and constituency.
+**Actor:** Poll Worker (Chairperson)  
+**Goal:** Enter and submit the paper ballot count for a polling district.
 
 **Main Flow:**
-1. Voter attempts to vote.
-2. System checks voter's registered constituency, age, and citizenship.
-3. System confirms eligibility or rejects with a reason.
-4. System checks that the voter has not already voted.
+1. Board chairperson initiates tally entry after the polling station closes.
+2. Chairperson (or secretary) enters the ballot count per candidate as determined by the board's physical count.
+3. System validates that total counts are internally consistent.
+4. Chairperson reviews and confirms the tally.
+5. System records the tally with status SUBMITTED.
+6. Election Official is notified for review.
+
+**Preconditions:** The voting period has closed; the board is assigned to the polling district.  
+**Postconditions:** A BoardTally record exists in SUBMITTED status for the polling district.
+
+---
+
+## UC-13: Review and Approve Ballot Tallies
+
+**Actor:** Election Official / Central Electoral Commission  
+**Goal:** Review submitted ballot tallies and approve them for inclusion in constituency results.
+
+**Main Flow:**
+1. Official or commission member reviews submitted tallies from each polling district board.
+2. Any discrepancies or anomalies are flagged and the relevant board is contacted for clarification.
+3. Tallies are approved or rejected individually.
+4. Once all tallies for a constituency are approved, the system aggregates them into a preliminary constituency result.
 
 ---
 
 ## Summary Matrix
 
-| Use Case | Election Official | Voter | Party Admin | Observer | Sys Admin |
-|---|:---:|:---:|:---:|:---:|:---:|
-| UC-01 Set Up Election | ✓ | | | | |
-| UC-02 Register Party | ✓ | | ✓ | | |
-| UC-03 Submit Candidate List | ✓ | | ✓ | | |
-| UC-04 Register Candidate | ✓ | | ✓ | | |
-| UC-05 Cast Vote | | ✓ | | | |
-| UC-06 View Candidates | ✓ | ✓ | ✓ | ✓ | |
-| UC-07 Tally Results | ✓ | | | | |
-| UC-08 Publish Results | ✓ | | | | |
-| UC-09 View Results | ✓ | ✓ | ✓ | ✓ | |
-| UC-10 Export Results | ✓ | | | ✓ | |
-| UC-11 Manage Users | | | | | ✓ |
-| UC-12 Validate Eligibility | ✓ (system) | | | | |
+| Use Case | Election Official | Candidate | Party Admin | Poll Worker | Central Electoral Commission | Observer | Sys Admin |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| UC-01 Set Up Election | ✓ | | | | | | |
+| UC-02 Register Party | ✓ | | ✓ | | | | |
+| UC-03 Submit Candidate List | ✓ | | ✓ | | | | |
+| UC-04 Register Candidate | ✓ | | ✓ | | | | |
+| UC-05 Manage Polling Districts and Boards | ✓ | | | | | | |
+| UC-06 View Candidates | ✓ | ✓ | ✓ | | | ✓ | |
+| UC-07 Close Voting and Initiate Counting | ✓ | | | | | | |
+| UC-08 Publish Results | ✓ | | | | ✓ | | |
+| UC-09 View Results | ✓ | ✓ | ✓ | | ✓ | ✓ | |
+| UC-10 Export Results | ✓ | | | | ✓ | ✓ | |
+| UC-11 Manage Users | | | | | | | ✓ |
+| UC-12 Submit Ballot Tally | | | | ✓ | | | |
+| UC-13 Review and Approve Tallies | ✓ | | | | ✓ | | |
