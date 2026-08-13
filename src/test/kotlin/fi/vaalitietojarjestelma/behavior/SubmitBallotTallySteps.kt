@@ -37,4 +37,11 @@ class SubmitBallotTallySteps {
     fun theIndividualVoteCountOfCandidateIs(candidateName: String, votes: Int) {
         service.individualVoteCount(candidateName) shouldBe votes
     }
+
+    @Then("the recorded vote counts for candidates are")
+    fun theRecordedVoteCountsForCandidatesAre(expectedVoteCounts: DataTable) {
+        expectedVoteCounts.asMaps(String::class.java, String::class.java).forEach { row ->
+            service.individualVoteCount(row.getValue("candidate")) shouldBe row.getValue("votes").toInt()
+        }
+    }
 }
