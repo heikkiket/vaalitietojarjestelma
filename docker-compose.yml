@@ -1,0 +1,15 @@
+services:
+  app:
+    build:
+      context: .
+      target: build
+    working_dir: /app
+    volumes:
+      - .:/app
+      - gradle-cache:/root/.gradle
+      - build-output:/app/build
+    command: ["tail", "-f", "/dev/null"]
+
+volumes:
+  gradle-cache:
+  build-output:
