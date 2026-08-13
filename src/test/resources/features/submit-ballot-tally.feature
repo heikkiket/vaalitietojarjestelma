@@ -18,7 +18,7 @@ Feature: Submit Ballot Tally
       | candidate      | votes |
       | Maria Virtanen | 245   |
       | Jukka Korhonen | 198   |
-    Then the recorded vote counts for candidates are
+    Then the recorded vote counts for candidates should be
       | candidate      | votes |
       | Maria Virtanen | 245   |
       | Jukka Korhonen | 198   |

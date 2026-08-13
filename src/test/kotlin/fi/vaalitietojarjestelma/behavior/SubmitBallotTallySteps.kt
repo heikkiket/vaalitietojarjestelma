@@ -3,6 +3,7 @@ package fi.vaalitietojarjestelma.behavior
 import fi.vaalitietojarjestelma.domain.CandidateVoteCount
 import fi.vaalitietojarjestelma.service.BallotTallyService
 import io.cucumber.datatable.DataTable
+import io.cucumber.java.PendingException
 import io.cucumber.java.en.Given
 import io.cucumber.java.en.Then
 import io.cucumber.java.en.When
@@ -38,10 +39,35 @@ class SubmitBallotTallySteps {
         service.individualVoteCount(candidateName) shouldBe votes
     }
 
-    @Then("the recorded vote counts for candidates are")
-    fun theRecordedVoteCountsForCandidatesAre(expectedVoteCounts: DataTable) {
+    @Given("there are following candidates")
+    fun thereAreFollowingCandidates(candidates: DataTable) {
+        candidates.asMaps(String::class.java, String::class.java).forEach { row ->
+            service.registerCandidate(row.getValue("candidate"))
+        }
+    }
+
+    @Given("the recorded vote counts for candidates are")
+    fun theRecordedVoteCountsForCandidatesAre(voteCounts: DataTable) {
+        val candidateVotes = voteCounts.asMaps(String::class.java, String::class.java).map { row ->
+            CandidateVoteCount(candidate = row.getValue("candidate"), votes = row.getValue("votes").toInt())
+        }
+        service.enterBallotCount(pollingStationId, candidateVotes)
+    }
+
+    @Then("the recorded vote counts for candidates should be")
+    fun theRecordedVoteCountsForCandidatesShouldBe(expectedVoteCounts: DataTable) {
         expectedVoteCounts.asMaps(String::class.java, String::class.java).forEach { row ->
             service.individualVoteCount(row.getValue("candidate")) shouldBe row.getValue("votes").toInt()
         }
+    }
+
+    @When("the chairperson reviews and confirms the tally")
+    fun theChairpersonReviewsAndConfirmsTheTally() {
+        throw PendingException()
+    }
+
+    @Then("the tally is recorded with status {string}")
+    fun theTallyIsRecordedWithStatus(status: String) {
+        throw PendingException()
     }
 }
