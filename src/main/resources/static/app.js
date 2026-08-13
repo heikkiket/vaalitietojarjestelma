@@ -1,4 +1,5 @@
 const API_BASE = '/api/ballot-tally';
+const CANDIDATES_URL = '/api/candidates';
 
 const statusEl = document.getElementById('status');
 const errorEl = document.getElementById('error');
@@ -36,7 +37,7 @@ async function refreshStatus() {
 
 async function loadCandidates() {
   try {
-    const candidates = await fetchJson(`${API_BASE}/candidates`);
+    const candidates = await fetchJson(CANDIDATES_URL);
     fieldsEl.innerHTML = '';
     candidates.forEach((candidate) => {
       const label = document.createElement('label');

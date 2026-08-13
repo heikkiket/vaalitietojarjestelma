@@ -3,15 +3,15 @@ package fi.vaalitietojarjestelma.service
 import fi.vaalitietojarjestelma.domain.BallotTallyStatus
 import fi.vaalitietojarjestelma.domain.CandidateVoteCount
 import fi.vaalitietojarjestelma.domain.PollingStation
+import fi.vaalitietojarjestelma.repository.CandidateRepository
 import org.springframework.stereotype.Service
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 @Service
-class BallotTallyService {
+class BallotTallyService(private val candidateRepository: CandidateRepository) {
 
     private val pollingStations = ConcurrentHashMap<UUID, PollingStation>()
-    private val registeredCandidates = ConcurrentHashMap.newKeySet<String>()
     private var enteredVoteCounts: List<CandidateVoteCount> = emptyList()
     private var tallyStatus = BallotTallyStatus.DRAFT
 
@@ -24,13 +24,13 @@ class BallotTallyService {
     }
 
     fun registerCandidate(candidateName: String) {
-        registeredCandidates.add(candidateName)
+        candidateRepository.save(candidateName)
     }
 
     fun enterBallotCount(pollingStationId: UUID, candidateVotes: List<CandidateVoteCount>): List<CandidateVoteCount> {
         require(pollingStations.containsKey(pollingStationId)) { "Polling station not found: $pollingStationId" }
         candidateVotes.forEach { vote ->
-            require(vote.candidate in registeredCandidates) { "Candidate not registered: ${vote.candidate}" }
+            require(candidateRepository.findByName(vote.candidate) != null) { "Candidate not registered: ${vote.candidate}" }
         }
         enteredVoteCounts = candidateVotes
         return candidateVotes
