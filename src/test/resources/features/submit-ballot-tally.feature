@@ -10,8 +10,21 @@ Feature: Submit Ballot Tally
       | Maria Virtanen | 245   |
     Then the individual vote count of Maria Virtanen is 245
 
-  @wip
-  Scenario: Chairperson submits the ballot tally after the polling station closes
+  Scenario: Chairperson submits vote counts for several candidates
+    Given there is polling station "Helsinki Central"
+    And there is candidate called Maria Virtanen
+    And there is candidate called Jukka Korhonen
+    When the chairperson enters the following ballot count
+      | candidate      | votes |
+      | Maria Virtanen | 245   |
+      | Jukka Korhonen | 198   |
+    Then the recorded vote counts for candidates are
+      | candidate      | votes |
+      | Maria Virtanen | 245   |
+      | Jukka Korhonen | 198   |
+
+  @wip 
+  Scenario: Chairperson submits the ballot tally
     Given there is polling station "Helsinki Central"
     And there is candidate called Maria Virtanen
     And there is candidate called Jukka Korhonen
