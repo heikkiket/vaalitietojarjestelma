@@ -26,12 +26,9 @@ Feature: Submit Ballot Tally
   @wip 
   Scenario: Chairperson submits the ballot tally
     Given there is polling station "Helsinki Central"
-    And there is candidate called Maria Virtanen
-    And there is candidate called Jukka Korhonen
-    When the chairperson enters the following ballot count
+    And the recorded vote counts for candidates are
       | candidate      | votes |
       | Maria Virtanen | 245   |
       | Jukka Korhonen | 198   |
-    And the chairperson reviews and confirms the tally
+    When the chairperson reviews and confirms the tally
     Then the tally is recorded with status "SUBMITTED"
-    And the election official is notified to review the tally
