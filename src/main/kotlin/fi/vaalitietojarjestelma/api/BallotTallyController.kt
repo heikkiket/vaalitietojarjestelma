@@ -21,8 +21,6 @@ data class TallyStatusResponse(
     val status: BallotTallyStatus,
 )
 
-private val MOCK_CANDIDATES = listOf("Maria Virtanen", "Jukka Korhonen")
-
 @RestController
 @RequestMapping("/api/ballot-tally")
 class BallotTallyController(private val ballotTallyService: BallotTallyService) {
@@ -40,9 +38,6 @@ class BallotTallyController(private val ballotTallyService: BallotTallyService) 
 
     @GetMapping("/status")
     fun status(): TallyStatusResponse = TallyStatusResponse(ballotTallyService.tallyStatus())
-
-    @GetMapping("/candidates")
-    fun candidates(): List<String> = MOCK_CANDIDATES
 
     @ExceptionHandler(IllegalArgumentException::class)
     fun handleBadRequest(): ResponseEntity<Unit> = ResponseEntity.badRequest().build()
