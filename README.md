@@ -19,6 +19,12 @@ The API will be available at `http://localhost:8080`. To verify:
 curl http://localhost:8080/api/hello
 ```
 
+Or with Docker Compose:
+
+```bash
+docker compose run --rm -p 8080:8080 app ./gradlew bootRun --no-daemon
+```
+
 ### Tests
 
 ```bash
