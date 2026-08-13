@@ -1,5 +1,6 @@
 package fi.vaalitietojarjestelma.service
 
+import fi.vaalitietojarjestelma.domain.BallotTallyStatus
 import fi.vaalitietojarjestelma.domain.CandidateVoteCount
 import fi.vaalitietojarjestelma.domain.PollingStation
 import org.springframework.stereotype.Service
@@ -12,6 +13,7 @@ class BallotTallyService {
     private val pollingStations = ConcurrentHashMap<UUID, PollingStation>()
     private val registeredCandidates = ConcurrentHashMap.newKeySet<String>()
     private var enteredVoteCounts: List<CandidateVoteCount> = emptyList()
+    private var tallyStatus = BallotTallyStatus.DRAFT
 
     fun registerPollingStation(name: String): PollingStation {
         val station = PollingStation(id = UUID.randomUUID(), name = name)
@@ -36,4 +38,11 @@ class BallotTallyService {
         return enteredVoteCounts.firstOrNull { it.candidate == candidateName }?.votes
             ?: throw NoSuchElementException("No vote count recorded for candidate: $candidateName")
     }
+
+    fun submitTally(): BallotTallyStatus {
+        tallyStatus = BallotTallyStatus.SUBMITTED
+        return tallyStatus
+    }
+
+    fun tallyStatus(): BallotTallyStatus = tallyStatus
 }

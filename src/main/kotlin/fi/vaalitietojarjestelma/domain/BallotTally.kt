@@ -11,3 +11,5 @@ data class CandidateVoteCount(
     val candidate: String,
     val votes: Int,
 )
+
+enum class BallotTallyStatus { DRAFT, SUBMITTED }

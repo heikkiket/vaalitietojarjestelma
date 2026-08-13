@@ -1,9 +1,9 @@
 package fi.vaalitietojarjestelma.behavior
 
+import fi.vaalitietojarjestelma.domain.BallotTallyStatus
 import fi.vaalitietojarjestelma.domain.CandidateVoteCount
 import fi.vaalitietojarjestelma.service.BallotTallyService
 import io.cucumber.datatable.DataTable
-import io.cucumber.java.PendingException
 import io.cucumber.java.en.Given
 import io.cucumber.java.en.Then
 import io.cucumber.java.en.When
@@ -63,11 +63,11 @@ class SubmitBallotTallySteps {
 
     @When("the chairperson reviews and confirms the tally")
     fun theChairpersonReviewsAndConfirmsTheTally() {
-        throw PendingException()
+        service.submitTally()
     }
 
     @Then("the tally is recorded with status {string}")
     fun theTallyIsRecordedWithStatus(status: String) {
-        throw PendingException()
+        service.tallyStatus() shouldBe BallotTallyStatus.valueOf(status)
     }
 }
