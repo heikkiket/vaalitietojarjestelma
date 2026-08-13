@@ -1,0 +1,121 @@
+openapi: 3.0.3
+info:
+  title: Ballot Tally API
+  description: >
+    Exposes BallotTallyService over HTTP. See src/main/kotlin/fi/vaalitietojarjestelma/api/BallotTallyController.kt
+    for the implementation and docs/api.md for the design notes this schema was generated from.
+  version: "1.0.0"
+servers:
+  - url: http://localhost:8080
+paths:
+  /api/ballot-tally/enter:
+    post:
+      summary: Record the ballot count for the current tally
+      operationId: enterBallotCount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnterBallotCountRequest'
+      responses:
+        '200':
+          description: The recorded vote counts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CandidateVoteCount'
+        '400':
+          description: A candidate in the request hasn't been registered yet
+  /api/ballot-tally/votes/{candidate}:
+    get:
+      summary: Get the recorded vote count for one candidate
+      operationId: individualVoteCount
+      parameters:
+        - name: candidate
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The candidate's recorded vote count
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CandidateVoteCount'
+        '404':
+          description: No vote count has been recorded for this candidate
+  /api/ballot-tally/submit:
+    post:
+      summary: Confirm and submit the tally (DRAFT -> SUBMITTED)
+      operationId: submitTally
+      responses:
+        '200':
+          description: The tally's new status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TallyStatusResponse'
+        '409':
+          description: The tally is not in a state that can be submitted
+  /api/ballot-tally/status:
+    get:
+      summary: Get the current tally status
+      operationId: tallyStatus
+      responses:
+        '200':
+          description: The tally's current status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TallyStatusResponse'
+  /api/candidates:
+    get:
+      summary: List candidate names available for data entry (mock)
+      description: >
+        Mock endpoint backed by a hardcoded placeholder list, since real candidate
+        registration/retrieval isn't implemented yet (see the not-yet-implemented
+        manage-candidates feature).
+      operationId: listCandidates
+      responses:
+        '200':
+          description: Candidate names
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+              example: ["Maria Virtanen", "Jukka Korhonen"]
+components:
+  schemas:
+    CandidateVoteCount:
+      type: object
+      required: [candidate, votes]
+      properties:
+        candidate:
+          type: string
+          example: Maria Virtanen
+        votes:
+          type: integer
+          example: 245
+    EnterBallotCountRequest:
+      type: object
+      required: [candidateVotes]
+      properties:
+        candidateVotes:
+          type: array
+          items:
+            $ref: '#/components/schemas/CandidateVoteCount'
+    BallotTallyStatus:
+      type: string
+      enum: [DRAFT, SUBMITTED]
+    TallyStatusResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: '#/components/schemas/BallotTallyStatus'
