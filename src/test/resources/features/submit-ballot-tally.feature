@@ -23,9 +23,12 @@ Feature: Submit Ballot Tally
       | Maria Virtanen | 245   |
       | Jukka Korhonen | 198   |
 
-  @wip 
   Scenario: Chairperson submits the ballot tally
     Given there is polling station "Helsinki Central"
+    And there are following candidates
+      | candidate      |
+      | Maria Virtanen |
+      | Jukka Korhonen |
     And the recorded vote counts for candidates are
       | candidate      | votes |
       | Maria Virtanen | 245   |
