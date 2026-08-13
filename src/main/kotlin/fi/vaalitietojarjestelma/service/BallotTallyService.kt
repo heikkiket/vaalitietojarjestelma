@@ -15,6 +15,8 @@ class BallotTallyService {
     private var enteredVoteCounts: List<CandidateVoteCount> = emptyList()
     private var tallyStatus = BallotTallyStatus.DRAFT
 
+    private val defaultPollingStationId: UUID by lazy { registerPollingStation("Default").id }
+
     fun registerPollingStation(name: String): PollingStation {
         val station = PollingStation(id = UUID.randomUUID(), name = name)
         pollingStations[station.id] = station
@@ -33,6 +35,9 @@ class BallotTallyService {
         enteredVoteCounts = candidateVotes
         return candidateVotes
     }
+
+    fun enterBallotCount(candidateVotes: List<CandidateVoteCount>): List<CandidateVoteCount> =
+        enterBallotCount(defaultPollingStationId, candidateVotes)
 
     fun individualVoteCount(candidateName: String): Int {
         return enteredVoteCounts.firstOrNull { it.candidate == candidateName }?.votes
